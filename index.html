@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=0.80">
 <title>Soulstone Enchanting Advisor</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
@@ -1217,6 +1217,16 @@ async function analyzeFrame() {
 }
 
 document.getElementById('btn-snap').addEventListener('click',()=>{drawFrame();analyzeFrame()});
+
+(function () {
+    function updateEmbedZoom() {
+        if (window.self !== window.top) {
+            document.documentElement.style.zoom = window.outerWidth <= 680 ? '0.80' : '';
+        }
+    }
+    updateEmbedZoom();
+    window.addEventListener('resize', updateEmbedZoom);
+})();
 </script>
 </body>
 </html>
