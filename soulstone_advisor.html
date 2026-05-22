@@ -722,15 +722,6 @@ function buildDiamonds(container, isCurse, att, suc, history) {
   }
 }
 
-function updateGoalLabels() {
-  const affixes = [0,1,2].map(i => ({si:i, suc:statState[i].suc}));
-  affixes.sort((a,b) => b.suc - a.suc || a.si - b.si);
-  const labels = ['≥ 9 successes','≥ 6 successes','≥ 3 successes'];
-  affixes.forEach(({si}, rank) => {
-    const el = document.getElementById(`goal-label-${si}`);
-    if(el) el.textContent = labels[rank];
-  });
-}
 
 const statRowsEl = document.getElementById('stat-rows');
 STAT_NAMES.forEach((name, si) => {
@@ -739,7 +730,6 @@ STAT_NAMES.forEach((name, si) => {
   card.innerHTML=`
     <div class="stat-head">
       <span class="stat-name-label ${STAT_CURSE[si]?'curse-color':'affix-color'}">${name}</span>
-      <span class="stat-goal-label" id="goal-label-${si}">${STAT_GOALS[si]}</span>
     </div>
     <div class="stat-inputs">
       <div class="stat-counters">
@@ -771,7 +761,6 @@ STAT_NAMES.forEach((name, si) => {
     sucValEl.textContent = suc;
     buildDiamonds(diaEl, STAT_CURSE[si], att, suc, history);
     triggerManualLookup();
-    if(!STAT_CURSE[si]) updateGoalLabels();
   }
 
   document.getElementById(`btn-suc-${si}`).addEventListener('click', () => {
@@ -809,7 +798,6 @@ document.getElementById('global-reset-btn').addEventListener('click', () => {
   currentCI = 5;
   document.getElementById('ci-display').textContent = '75%';
   document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('highlighted'));
-  updateGoalLabels();
   triggerManualLookup();
 });
 
