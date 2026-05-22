@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soulstone Enchanting Advisor</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:hidden;}
+body{
+  overflow-x:hidden;
+  background: radial-gradient(1200px 700px at 20% 0%, rgba(50,180,160,.04), transparent 60%),
+              radial-gradient(900px 600px at 90% 10%, rgba(220,60,60,.05), transparent 55%),
+              #09090d;
+  color:#f0ece4;
+  font-family:'Manrope','Segoe UI','Helvetica Neue',Arial,sans-serif;
+  font-size:14px;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  letter-spacing:0.2px;
+}
+
+/* ── Header ── */
+header{
+  background:linear-gradient(180deg,rgba(6,20,18,0.98) 0%,rgba(4,14,12,0.99) 100%);
+  border-bottom:1px solid rgba(70,180,160,0.12);
+  padding:16px 28px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  box-shadow:0 4px 24px rgba(0,0,0,0.4);
+  animation: fadeDown 0.5s ease both;
+}
+header h1{
+  font-family:'Cinzel',serif;
+  color:#f2c86b;
+  font-size:22px;
+  font-weight:500;
+  letter-spacing:0.04em;
+  white-space:nowrap;
+}
+#solver-status{font-size:12px;color:#aaa090;display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap}
+.sdot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot-y{background:#f2c86b}.dot-g{background:#7ecfa0}.dot-r{background:#e06a6a}
+.prog-wrap{background:rgba(70,180,160,0.12);border-radius:4px;height:3px;width:140px;overflow:hidden;display:inline-block;vertical-align:middle}
+.prog-bar{height:100%;background:#f2c86b;width:0%;transition:width 0.4s}
+
+/* ── Tabs ── */
+.tabs{
+  display:flex;gap:8px;
+  background:rgba(5,16,14,0.9);
+  border-bottom:1px solid rgba(70,180,160,0.10);
+  padding:12px 28px;
+}
+.tab-btn{
+  background:rgba(242,200,107,0.07);
+  border:1px solid rgba(242,200,107,0.18);
+  color:#f6d88e;
+  cursor:pointer;font-size:13px;
+  padding:7px 20px;
+  border-radius:999px;
+  font-family:'Manrope',sans-serif;
+  transition:background 0.18s,border-color 0.18s,transform 0.1s;
+}
+.tab-btn:hover{background:rgba(242,200,107,0.14);border-color:rgba(242,200,107,0.34);transform:translateY(-1px)}
+.tab-btn.active{background:rgba(242,200,107,0.20);border-color:rgba(242,200,107,0.52);color:#fce9aa}
+
+/* ── Layout ── */
+.tab-content{display:none;padding:24px 28px;max-width:700px;margin:0 auto}
+.tab-content.active{display:block;animation: fadeUp 0.45s ease both;}
+
+/* ── Chance row ── */
+.chance-row{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  margin-bottom:16px;padding:10px 20px;
+  background:rgba(8,22,20,0.50);
+  border:1px solid rgba(70,180,160,0.14);
+  border-left:3px solid rgba(242,200,107,0.4);
+  border-radius:16px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.25);
+}
+.chance-row-labels{display:flex;flex-direction:column;gap:3px}
+.chance-row label{color:#d4c9a8;white-space:nowrap;font-weight:500;font-size:14px}
+.chance-hint{font-size:11px;color:#8a8078}
+.ci-display{
+  background:rgba(4,16,14,0.8);
+  border:1px solid rgba(242,200,107,0.28);
+  color:#f2c86b;
+  font-size:17px;font-weight:600;
+  padding:6px 18px;border-radius:999px;
+  font-family:'Manrope',sans-serif;
+  flex-shrink:0;
+}
+
+/* ── Stat cards ── */
+.stat-card{
+  background:rgba(8,22,20,0.50);
+  border:1px solid rgba(70,180,160,0.14);
+  border-left:3px solid rgba(242,200,107,0.35);
+  border-radius:18px;
+  padding:10px 18px;
+  margin-bottom:12px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.28),0 0 8px rgba(50,180,160,0.06);
+  transition:border-left-color 0.25s,box-shadow 0.25s;
+}
+.stat-card.highlighted{
+  border-left-color:rgba(126,207,160,0.85);
+  box-shadow:0 4px 24px rgba(0,0,0,0.32),0 0 14px rgba(126,207,160,0.18);
+}
+.stat-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.stat-name-label{font-family:'Cinzel',serif;font-weight:500;font-size:14px;letter-spacing:0.03em}
+.affix-color{color:#7ecfd4}
+.curse-color{color:#f5a9c9}
+.stat-goal-label{font-size:11px;color:#8a8078;letter-spacing:0.02em}
+
+.stat-inputs{display:flex;flex-direction:column;gap:10px}
+.record-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn-success,.btn-failure{
+  padding:8px 0;border:none;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;transition:filter 0.15s,transform 0.1s;letter-spacing:0.02em;
+}
+.btn-success{background:rgba(50,180,160,0.18);color:#7ecfd4;border:1px solid rgba(50,180,160,0.3)}
+.btn-failure{background:rgba(200,80,80,0.15);color:#e09090;border:1px solid rgba(200,80,80,0.25)}
+.btn-success:hover{filter:brightness(1.2)}
+.btn-failure:hover{filter:brightness(1.2)}
+.btn-success:active,.btn-failure:active{transform:scale(0.96)}
+.stat-counters{display:flex;align-items:center;justify-content:space-between}
+.counter-group{display:flex;flex-direction:column;align-items:center;gap:2px}
+.counter-label{font-size:10px;color:#8a8078;text-transform:uppercase;letter-spacing:.6px}
+.counter-val{font-size:22px;font-weight:600;color:#f2c86b;line-height:1}
+.btn-reset{
+  background:none;border:1px solid rgba(70,180,160,0.15);border-radius:6px;
+  color:#8a8078;font-size:10px;cursor:pointer;padding:3px 8px;letter-spacing:0.04em;
+  transition:color 0.15s,border-color 0.15s;
+}
+.btn-reset:hover{color:#7ecfd4;border-color:rgba(70,180,160,0.4)}
+
+/* ── Diamonds ── */
+.diamonds{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.dia{width:13px;height:13px;border:2px solid;transform:rotate(45deg);border-radius:2px;transition:background 0.15s}
+.dia-affix-on {background:#3a9890;border-color:#7ecfd4}
+.dia-affix-off{background:transparent;border-color:rgba(70,180,160,0.18)}
+.dia-curse-on {background:#c97fa0;border-color:#f5a9c9}
+.dia-curse-off{background:transparent;border-color:rgba(245,169,201,0.15)}
+
+/* ── Result box ── */
+.result-box{
+  background:rgba(8,22,20,0.50);
+  border:1px solid rgba(70,180,160,0.14);
+  border-left:3px solid rgba(126,207,160,0.5);
+  border-radius:18px;
+  padding:16px 18px;
+  margin-top:18px;
+  text-align:center;
+  min-height:100px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3),0 0 10px rgba(126,207,160,0.08);
+  transition:border-left-color 0.3s,box-shadow 0.3s;
+}
+.result-box.neutral{
+  border-left-color:rgba(70,180,160,0.22);
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);
+}
+.result-box.warn{
+  border-left-color:rgba(242,167,107,0.6);
+  box-shadow:0 4px 20px rgba(0,0,0,0.3),0 0 10px rgba(242,167,107,0.1);
+}
+.result-box.dead{
+  border-left-color:rgba(220,90,90,0.5);
+  box-shadow:0 4px 20px rgba(0,0,0,0.3),0 0 10px rgba(220,90,90,0.08);
+}
+.result-box.won{
+  border-left-color:rgba(126,207,160,0.9);
+  box-shadow:0 4px 20px rgba(0,0,0,0.3),0 0 18px rgba(126,207,160,0.2);
+}
+.result-box.won .result-action{color:#7ecfd4}
+.result-action{font-family:'Cinzel',serif;font-size:20px;font-weight:500;color:#f2c86b;letter-spacing:0.03em}
+.result-box.warn .result-action{color:#f2a96b}
+.result-box.dead .result-action{color:#e06a6a}
+.result-prob{font-size:13px;color:#aaa090;line-height:1.5}
+.winbar-wrap{width:100%;background:rgba(70,180,160,0.10);border-radius:4px;height:6px;overflow:hidden;margin-top:2px}
+.winbar{height:100%;background:linear-gradient(90deg,rgba(220,90,90,0.9),#f2c86b,#7ecfa0);border-radius:4px;transition:width 0.4s;width:0%}
+
+/* ── Buttons ── */
+.btn{
+  background:rgba(242,200,107,0.07);
+  border:1px solid rgba(242,200,107,0.20);
+  color:#f6d88e;
+  cursor:pointer;font-size:13px;
+  padding:8px 18px;border-radius:999px;
+  font-family:'Manrope',sans-serif;
+  transition:background 0.18s,border-color 0.18s,transform 0.1s;
+}
+.btn:hover{background:rgba(242,200,107,0.15);border-color:rgba(242,200,107,0.38);transform:translateY(-1px)}
+.btn.primary{background:rgba(126,207,160,0.12);border-color:rgba(126,207,160,0.35);color:#7ecfa0}
+.btn.primary:hover{background:rgba(126,207,160,0.2);border-color:rgba(126,207,160,0.55)}
+.btn:disabled{opacity:.3;cursor:not-allowed;pointer-events:none;transform:none}
+
+/* ── Screen capture ── */
+.ctrl-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+#canvas-wrap{position:relative;display:inline-block;max-width:100%;margin-top:8px}
+#cap-canvas{display:block;max-width:100%;border:1px solid rgba(70,180,160,0.14);border-radius:12px;cursor:crosshair}
+.region-rect{position:absolute;border:2px solid #f2c86b;pointer-events:none;box-shadow:0 0 0 9999px rgba(0,0,0,.4)}
+.hint{font-size:12px;color:#8a8078;margin-top:8px;line-height:1.7}
+.hint strong{color:#d4c9a8}
+.badge{background:rgba(126,207,160,0.1);border:1px solid rgba(126,207,160,0.3);border-radius:10px;color:#7ecfa0;font-size:11px;padding:3px 10px}
+
+/* ── OCR state ── */
+.ocr-state{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;font-size:12px;color:#aaa090}
+.ocr-cell{
+  background:rgba(8,22,20,0.6);
+  border:1px solid rgba(70,180,160,0.10);
+  border-radius:10px;padding:7px 12px;
+}
+.ocr-cell strong{color:#f2c86b}
+@keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp   { from{opacity:0;transform:translateY(12px)}  to{opacity:1;transform:translateY(0)} }
+/* ── Two-col layout ── */
+#tab-manual { max-width:none !important; padding:0 !important; }
+.tool-layout { max-width:980px;margin:0 auto;padding:24px 28px;display:flex;gap:24px;align-items:flex-start; }
+.main-col { flex:1;min-width:0; }
+.side-panel { width:224px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;position:sticky;top:20px; }
+.side-card { background:rgba(8,22,20,0.50);border:1px solid rgba(70,180,160,0.14);border-radius:14px;padding:12px 14px; }
+.side-card-label { font-size:10px;color:#8a8078;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px; }
+.side-panel #solver-status { font-size:12px;color:#aaa090;display:flex;flex-direction:column;gap:6px;flex:unset; }
+.side-panel .prog-wrap { width:100%; }
+.side-panel .hint { margin:0;font-size:11.5px; }
+
+.page-title{text-align:center;margin:28px auto 20px;animation:fadeDown 0.6s ease both;max-width:700px;padding:16px 28px 0;background:radial-gradient(ellipse 70% 120% at 50% 60%,rgba(50,180,160,0.08),transparent 80%)}
+.page-title-eyebrow{font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.3em;color:#7ecfd4;text-transform:uppercase;margin-bottom:10px}
+.page-title h1{font-family:'Cinzel Decorative',serif;font-size:clamp(22px,4vw,36px);font-weight:700;color:#f2c86b;line-height:1.2;letter-spacing:0.02em;text-shadow:0 0 40px rgba(242,200,107,0.25),0 0 90px rgba(50,180,160,0.18),0 2px 4px rgba(0,0,0,0.8)}
+.page-title-rule{display:flex;align-items:center;gap:12px;margin-top:14px;color:rgba(126,207,212,0.5);font-size:16px}
+.page-title-rule::before,.page-title-rule::after{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,rgba(126,207,212,0.3),transparent)}
+
+@media (max-width: 480px) {
+  .page-title { padding: 12px 12px 0; margin: 16px auto 14px; }
+  .tool-layout { flex-direction: column; padding: 16px 12px; gap: 16px; }
+  .side-panel  { width: 100%; position: static; flex-direction: row; flex-wrap: wrap; }
+  .side-card   { flex: 1; min-width: 0; }
+  header { padding: 12px 14px; }
+  header h1 { font-size: 18px; white-space: normal; }
+  .tabs { padding: 8px 14px; }
+  .tab-content { padding: 16px 14px; max-width: 100%; }
+  .chance-row { padding: 10px 10px; gap: 8px; }
+  .chance-row-labels { flex: 1; min-width: 0; }
+  .chance-row label { white-space: normal; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-title">
+  <div class="page-title-eyebrow">Harpagia · Enchanting</div>
+  <h1>Soulstone Enchanting Advisor</h1>
+  <div class="page-title-rule">✦</div>
+</div>
+
+<!-- ═══ MANUAL TAB ═══ -->
+<div id="tab-manual" class="tab-content active">
+  <div class="tool-layout">
+
+    <div class="main-col">
+      <div class="chance-row">
+        <div class="chance-row-labels">
+          <label>Current Success Chance</label>
+          <span class="chance-hint">Oscillates 25–75% with each enchant result</span>
+        </div>
+        <button id="global-reset-btn" class="btn-reset" style="flex-shrink:0;padding:8px 16px;font-size:12.6px;white-space:nowrap;color:#e09090;border-color:rgba(200,80,80,0.25);">Reset Tool</button>
+        <span id="ci-display" class="ci-display">75%</span>
+      </div>
+
+      <div id="stat-rows"></div>
+
+      <div class="result-box neutral" id="m-result">
+        <div class="result-action" id="m-action">Waiting for solver…</div>
+        <div class="result-prob" id="m-prob"></div>
+        <div class="winbar-wrap" id="m-wbar-wrap" style="display:none">
+          <div class="winbar" id="m-wbar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="side-card">
+        <div class="side-card-label">Solver</div>
+        <div id="solver-status">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="sdot dot-y" id="sdot"></span>
+            <span id="stext">Solving optimal policy…</span>
+          </div>
+          <span class="prog-wrap"><span id="prog-bar" class="prog-bar"></span></span>
+          <span id="prog-pct" style="font-size:11px;color:#8a8078"></span>
+        </div>
+      </div>
+      <div class="side-card">
+        <div class="side-card-label">About</div>
+        <div class="hint">
+          This tool uses <strong>Dynamic Programming</strong> to solve the optimal enchanting policy across all possible game states, guaranteeing the best possible recommendation at every step. It targets a distribution of <strong>9 / 6 / 3</strong> successes across the three affixes — assigned dynamically, so whichever affix is best positioned becomes the 9-target, and so on. If the current state makes that distribution unreachable, the result will show <strong>9/6/3 Unachievable</strong>.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ SCREEN CAPTURE TAB ═══ -->
+<div id="tab-screen" class="tab-content">
+
+  <div class="ctrl-row">
+    <button class="btn primary" id="btn-cap">▶ Start Screen Capture</button>
+    <button class="btn" id="btn-cal" disabled>✚ Calibrate Region</button>
+    <button class="btn" id="btn-snap" disabled>⟳ Analyze Frame</button>
+    <button class="btn" id="btn-auto" disabled>Auto (1 s)</button>
+    <span class="badge" id="live-badge" style="display:none">● LIVE</span>
+  </div>
+
+  <div class="hint" id="cap-hint">
+    Click <strong>Start Screen Capture</strong> and select your scrcpy window.<br>
+    Then <strong>Calibrate Region</strong> → click two corners of the enchanting panel.
+  </div>
+
+  <div id="canvas-wrap" style="display:none">
+    <canvas id="cap-canvas"></canvas>
+    <div id="reg-rect" class="region-rect" style="display:none"></div>
+  </div>
+
+  <div class="ocr-state" id="ocr-state" style="display:none">
+    <div class="ocr-cell">Chance: <strong id="ocr-chance">—</strong></div>
+    <div class="ocr-cell">Vengeance: <strong id="ocr-v">—</strong></div>
+    <div class="ocr-cell">Juggernaut: <strong id="ocr-j">—</strong></div>
+    <div class="ocr-cell">Ability Master: <strong id="ocr-a">—</strong></div>
+    <div class="ocr-cell">Power Curse: <strong id="ocr-c">—</strong></div>
+    <div class="ocr-cell" id="ocr-status-cell">Status: <strong id="ocr-status">—</strong></div>
+  </div>
+
+  <div class="result-box neutral" id="s-result" style="display:none">
+    <div class="result-action" id="s-action">—</div>
+    <div class="result-prob" id="s-prob"></div>
+    <div class="winbar-wrap" id="s-wbar-wrap" style="display:none">
+      <div class="winbar" id="s-wbar"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// CONSTANTS (shared between main thread and worker)
+// ═══════════════════════════════════════════════════════════════════════
+const CHANCE_LIST = [25,35,45,55,65,75];
+const START_CI    = 5;
+const MAX_ATT     = 10;
+const STAT_NAMES  = ['Affix 1','Affix 2','Affix 3','Curse'];
+const STAT_CURSE  = [false,false,false,true];
+const STAT_GOALS  = ['≥ 9 successes','≥ 6 successes','≥ 3 successes','≤ 4 successes'];
+const WIN_MIN     = [3,3,3,0];
+const WIN_MAX     = [10,10,10,4];
+const AFF_GOALS   = [9,6,3];
+// Chance transitions on success/fail
+const CI_WIN  = [0,0,1,2,3,4]; // success → chance decreases
+const CI_LOSE = [1,2,3,4,5,5]; // fail    → chance increases
+
+// ═══════════════════════════════════════════════════════════════════════
+// WEB WORKER (inline via Blob)
+// ═══════════════════════════════════════════════════════════════════════
+function workerMain() {
+  const CHANCE_LIST = [25,35,45,55,65,75];
+  const START_CI = 5;
+  const MAX_ATT = 10;
+  const WIN_MIN = [3,3,3,0];
+  const WIN_MAX = [10,10,10,4];
+  const AFF_GOALS = [9,6,3];
+  const CI_WIN  = [0,0,1,2,3,4];
+  const CI_LOSE = [1,2,3,4,5,5];
+  const PROBS   = [.25,.35,.45,.55,.65,.75];
+
+  // Build (att,suc) state table for one stat
+  function makeStatTable(winMin, winMax) {
+    const attArr=[], sucArr=[];
+    const MAP_SZ = (MAX_ATT+1)*100 + MAX_ATT + 1;
+    const idxMap = new Int16Array(MAP_SZ).fill(-1);
+    for (let att=0; att<=MAX_ATT; att++) {
+      for (let suc=0; suc<=att; suc++) {
+        if (suc + (MAX_ATT-att) < winMin) continue;
+        if (suc > winMax) continue;
+        const i = attArr.length;
+        idxMap[att*100+suc] = i;
+        attArr.push(att); sucArr.push(suc);
+      }
+    }
+    const n = attArr.length;
+    const attA = new Int32Array(attArr);
+    const sucA = new Int32Array(sucArr);
+    const succT = new Int32Array(n).fill(-1);
+    const failT = new Int32Array(n).fill(-1);
+    for (let i=0; i<n; i++) {
+      const att=attA[i], suc=sucA[i];
+      if (att < MAX_ATT) {
+        const sk=(att+1)*100+(suc+1), fk=(att+1)*100+suc;
+        if (sk < MAP_SZ) succT[i] = idxMap[sk];
+        if (fk < MAP_SZ) failT[i] = idxMap[fk];
+      }
+    }
+    return {n, attA, sucA, succT, failT, idxMap};
+  }
+
+  // Group state indices by att value
+  function byAtt(table) {
+    const groups = Array.from({length:MAX_ATT+1}, ()=>[]);
+    for (let i=0; i<table.n; i++) groups[table.attA[i]].push(i);
+    return groups;
+  }
+
+  let _V=null, _P=null, _s1,_s2,_s3,_s4;
+  let _vm,_jm,_am,_cm;
+
+  function solve() {
+    const tV=makeStatTable(WIN_MIN[0],WIN_MAX[0]);
+    const tJ=makeStatTable(WIN_MIN[1],WIN_MAX[1]);
+    const tA=makeStatTable(WIN_MIN[2],WIN_MAX[2]);
+    const tC=makeStatTable(WIN_MIN[3],WIN_MAX[3]);
+    const NV=tV.n, NJ=tJ.n, NA=tA.n, NC=tC.n;
+    const s4=NC, s3=NA*s4, s2=NJ*s3, s1=NV*s2;
+    const V = new Float32Array(6*s1);
+    const POLICY = new Uint8Array(6*s1);
+
+    _vm=tV.idxMap; _jm=tJ.idxMap; _am=tA.idxMap; _cm=tC.idxMap;
+
+    // Terminal win states
+    const vt=tV.attA, jt=tJ.attA, at_=tA.attA, ct=tC.attA;
+    const vs=tV.sucA, js=tJ.sucA, as_=tA.sucA, cs_=tC.sucA;
+    const vByA=byAtt(tV), jByA=byAtt(tJ), aByA=byAtt(tA), cByA=byAtt(tC);
+
+    for (const vi of vByA[MAX_ATT])
+    for (const ji of jByA[MAX_ATT])
+    for (const ai of aByA[MAX_ATT])
+    for (const cs of cByA[MAX_ATT]) {
+      let s0=vs[vi],s1_=js[ji],s2_=as_[ai];
+      // inline sort 3
+      if(s0<s1_){let t=s0;s0=s1_;s1_=t}
+      if(s1_<s2_){let t=s1_;s1_=s2_;s2_=t}
+      if(s0<s1_){let t=s0;s0=s1_;s1_=t}
+      if(s0>=AFF_GOALS[0] && s1_>=AFF_GOALS[1] && s2_>=AFF_GOALS[2] && cs_[cs]<=WIN_MAX[3]) {
+        const base = vi*s2 + ji*s3 + ai*s4 + cs;
+        for(let ci=0;ci<6;ci++) V[ci*s1+base]=1.0;
+      }
+    }
+
+    // DP: descending total attempts
+    const t0=Date.now();
+    let statesDone=0;
+
+    for(let tot=4*MAX_ATT-1; tot>=0; tot--) {
+      for(let va=Math.min(tot,MAX_ATT);va>=0;va--) {
+        const visArr=vByA[va];
+        if(!visArr.length) continue;
+        for(let ja=Math.min(tot-va,MAX_ATT);ja>=0;ja--) {
+          const jisArr=jByA[ja];
+          if(!jisArr.length) continue;
+          for(let aa=Math.min(tot-va-ja,MAX_ATT);aa>=0;aa--) {
+            const ca=tot-va-ja-aa;
+            if(ca<0||ca>MAX_ATT) continue;
+            const aisArr=aByA[aa], cisArr=cByA[ca];
+            if(!aisArr.length||!cisArr.length) continue;
+
+            for(let vi_k=0;vi_k<visArr.length;vi_k++) {
+            const vi=visArr[vi_k];
+            const pV=vs[vi]+(MAX_ATT-va);
+            for(let ji_k=0;ji_k<jisArr.length;ji_k++) {
+            const ji=jisArr[ji_k];
+            const pJ=js[ji]+(MAX_ATT-ja);
+            for(let ai_k=0;ai_k<aisArr.length;ai_k++) {
+            const ai=aisArr[ai_k];
+            const pA=as_[ai]+(MAX_ATT-aa);
+
+            // Inline sort 3 potentials for can-win
+            let p0=pV,p1=pJ,p2=pA;
+            if(p0<p1){let t=p0;p0=p1;p1=t}
+            if(p1<p2){let t=p1;p1=p2;p2=t}
+            if(p0<p1){let t=p0;p0=p1;p1=t}
+            if(p0<AFF_GOALS[0]||p1<AFF_GOALS[1]||p2<AFF_GOALS[2]) continue;
+
+            const base0 = vi*s2+ji*s3+ai*s4;
+
+            for(let cs_k=0;cs_k<cisArr.length;cs_k++) {
+            const cs=cisArr[cs_k];
+            const base=base0+cs;
+
+            // Compute best action for all 6 ci tiers
+            let b0=-1,b1=-1,b2=-1,b3=-1,b4=-1,b5=-1;
+            let p0_=-1,p1_=-1,p2_=-1,p3_=-1,p4_=-1,p5_=-1; // policies per ci
+
+            // Helper: try action, update best
+            // Action 0: Vengeance
+            if(va<MAX_ATT) {
+              const ns=tV.succT[vi], nf=tV.failT[vi];
+              const bs0=ns>=0?ns*s2+ji*s3+ai*s4+cs:-1;
+              const bf0=nf>=0?nf*s2+ji*s3+ai*s4+cs:-1;
+              for(let ci=0;ci<6;ci++) {
+                const vw=bs0>=0?V[CI_WIN[ci]*s1+bs0]:0;
+                const vl=bf0>=0?V[CI_LOSE[ci]*s1+bf0]:0;
+                const val=PROBS[ci]*vw+(1-PROBS[ci])*vl;
+                switch(ci){
+                  case 0:if(val>b0){b0=val;p0_=0}break;
+                  case 1:if(val>b1){b1=val;p1_=0}break;
+                  case 2:if(val>b2){b2=val;p2_=0}break;
+                  case 3:if(val>b3){b3=val;p3_=0}break;
+                  case 4:if(val>b4){b4=val;p4_=0}break;
+                  case 5:if(val>b5){b5=val;p5_=0}break;
+                }
+              }
+            }
+            // Action 1: Juggernaut
+            if(ja<MAX_ATT) {
+              const ns=tJ.succT[ji], nf=tJ.failT[ji];
+              const bs=ns>=0?vi*s2+ns*s3+ai*s4+cs:-1;
+              const bf=nf>=0?vi*s2+nf*s3+ai*s4+cs:-1;
+              for(let ci=0;ci<6;ci++) {
+                const vw=bs>=0?V[CI_WIN[ci]*s1+bs]:0;
+                const vl=bf>=0?V[CI_LOSE[ci]*s1+bf]:0;
+                const val=PROBS[ci]*vw+(1-PROBS[ci])*vl;
+                switch(ci){
+                  case 0:if(val>b0){b0=val;p0_=1}break;
+                  case 1:if(val>b1){b1=val;p1_=1}break;
+                  case 2:if(val>b2){b2=val;p2_=1}break;
+                  case 3:if(val>b3){b3=val;p3_=1}break;
+                  case 4:if(val>b4){b4=val;p4_=1}break;
+                  case 5:if(val>b5){b5=val;p5_=1}break;
+                }
+              }
+            }
+            // Action 2: Ability Master
+            if(aa<MAX_ATT) {
+              const ns=tA.succT[ai], nf=tA.failT[ai];
+              const bs=ns>=0?vi*s2+ji*s3+ns*s4+cs:-1;
+              const bf=nf>=0?vi*s2+ji*s3+nf*s4+cs:-1;
+              for(let ci=0;ci<6;ci++) {
+                const vw=bs>=0?V[CI_WIN[ci]*s1+bs]:0;
+                const vl=bf>=0?V[CI_LOSE[ci]*s1+bf]:0;
+                const val=PROBS[ci]*vw+(1-PROBS[ci])*vl;
+                switch(ci){
+                  case 0:if(val>b0){b0=val;p0_=2}break;
+                  case 1:if(val>b1){b1=val;p1_=2}break;
+                  case 2:if(val>b2){b2=val;p2_=2}break;
+                  case 3:if(val>b3){b3=val;p3_=2}break;
+                  case 4:if(val>b4){b4=val;p4_=2}break;
+                  case 5:if(val>b5){b5=val;p5_=2}break;
+                }
+              }
+            }
+            // Action 3: Curse
+            if(ca<MAX_ATT) {
+              const ns=tC.succT[cs], nf=tC.failT[cs];
+              const bs=ns>=0?vi*s2+ji*s3+ai*s4+ns:-1;
+              const bf=nf>=0?vi*s2+ji*s3+ai*s4+nf:-1;
+              for(let ci=0;ci<6;ci++) {
+                const vw=bs>=0?V[CI_WIN[ci]*s1+bs]:0;
+                const vl=bf>=0?V[CI_LOSE[ci]*s1+bf]:0;
+                const val=PROBS[ci]*vw+(1-PROBS[ci])*vl;
+                switch(ci){
+                  case 0:if(val>b0){b0=val;p0_=3}break;
+                  case 1:if(val>b1){b1=val;p1_=3}break;
+                  case 2:if(val>b2){b2=val;p2_=3}break;
+                  case 3:if(val>b3){b3=val;p3_=3}break;
+                  case 4:if(val>b4){b4=val;p4_=3}break;
+                  case 5:if(val>b5){b5=val;p5_=3}break;
+                }
+              }
+            }
+
+            // Write results
+            if(b0>=0){V[0*s1+base]=b0;POLICY[0*s1+base]=p0_}
+            if(b1>=0){V[1*s1+base]=b1;POLICY[1*s1+base]=p1_}
+            if(b2>=0){V[2*s1+base]=b2;POLICY[2*s1+base]=p2_}
+            if(b3>=0){V[3*s1+base]=b3;POLICY[3*s1+base]=p3_}
+            if(b4>=0){V[4*s1+base]=b4;POLICY[4*s1+base]=p4_}
+            if(b5>=0){V[5*s1+base]=b5;POLICY[5*s1+base]=p5_}
+
+            statesDone++;
+            } // cs
+            } // ai
+            } // ji
+            } // vi
+          }
+        }
+      }
+
+      // Report after every level so the bar never looks frozen
+      const elapsed=((Date.now()-t0)/1000).toFixed(1);
+      const pct=Math.round((4*MAX_ATT-tot)/(4*MAX_ATT)*100);
+      self.postMessage({type:'progress', pct, elapsed, states:statesDone});
+    }
+
+    _V=V; _P=POLICY; _s1=s1; _s2=s2; _s3=s3; _s4=s4;
+
+    const vi0=tV.idxMap[0], ji0=tJ.idxMap[0], ai0=tA.idxMap[0], cs0=tC.idxMap[0];
+    const startProb = V[START_CI*s1 + vi0*s2 + ji0*s3 + ai0*s4 + cs0];
+    const elapsed=(Date.now()-t0)/1000;
+
+    self.postMessage({
+      type:'done',
+      NV,NJ,NA,NC,s1,s2,s3,s4,
+      vIdxMap:tV.idxMap, jIdxMap:tJ.idxMap,
+      aIdxMap:tA.idxMap, cIdxMap:tC.idxMap,
+      startProb, elapsed:elapsed.toFixed(1)
+    }, [tV.idxMap.buffer, tJ.idxMap.buffer, tA.idxMap.buffer, tC.idxMap.buffer]);
+  }
+
+  self.onerror = function(err) {
+    self.postMessage({type:'error', msg: String(err.message||err)});
+  };
+
+  self.onmessage = function(e) {
+    const msg=e.data;
+    if(msg.type==='solve') {
+      try { solve(); }
+      catch(err) { self.postMessage({type:'error', msg:String(err.message||err)}); }
+    } else if(msg.type==='lookup') {
+      if(!_V){self.postMessage({type:'lookup_result',reqId:msg.reqId,action:-1,winProb:0});return}
+      const idx=msg.ci*_s1+msg.vi*_s2+msg.ji*_s3+msg.ai*_s4+msg.cs;
+      self.postMessage({type:'lookup_result',reqId:msg.reqId,action:_P[idx],winProb:_V[idx]});
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// WORKER SETUP
+// ═══════════════════════════════════════════════════════════════════════
+const blob = new Blob([`(${workerMain.toString()})()`], {type:'application/javascript'});
+const worker = new Worker(URL.createObjectURL(blob));
+
+let solverReady = false;
+let vIdxMap=null, jIdxMap=null, aIdxMap=null, cIdxMap=null;
+let NV,NJ,NA,NC,_s1,_s2,_s3,_s4;
+let pendingReqId = 0;
+let activeReqId  = 0;
+const reqCallbacks = new Map();
+
+worker.onmessage = function(e) {
+  const msg = e.data;
+  if(msg.type==='progress') {
+    document.getElementById('prog-bar').style.width = msg.pct+'%';
+    document.getElementById('prog-pct').textContent =
+      msg.pct+'%  '+msg.elapsed+'s  ('+Math.round(msg.states/1000)+'K states)';
+  } else if(msg.type==='error') {
+    document.getElementById('sdot').className='sdot dot-r';
+    document.getElementById('stext').textContent='Solver error: '+msg.msg;
+    document.getElementById('prog-bar').parentElement.style.display='none';
+  } else if(msg.type==='done') {
+    solverReady = true;
+    vIdxMap=msg.vIdxMap; jIdxMap=msg.jIdxMap;
+    aIdxMap=msg.aIdxMap; cIdxMap=msg.cIdxMap;
+    NV=msg.NV; NJ=msg.NJ; NA=msg.NA; NC=msg.NC;
+    _s1=msg.s1; _s2=msg.s2; _s3=msg.s3; _s4=msg.s4;
+
+    document.getElementById('prog-bar').style.width='100%';
+    document.getElementById('prog-pct').textContent='';
+    document.getElementById('sdot').className='sdot dot-g';
+    document.getElementById('stext').textContent =
+      `Ready — starting win probability: ${(msg.startProb*100).toFixed(2)}%  (solved in ${msg.elapsed}s)`;
+    document.getElementById('prog-bar').parentElement.style.display='none';
+
+    // Enable screen capture analyze button if stream active
+    if(videoStream) {
+      document.getElementById('btn-snap').disabled = false;
+      document.getElementById('btn-auto').disabled = false;
+    }
+    triggerManualLookup();
+  } else if(msg.type==='lookup_result') {
+    const cb = reqCallbacks.get(msg.reqId);
+    reqCallbacks.delete(msg.reqId);
+    if(cb) cb(msg.action, msg.winProb);
+  }
+};
+
+function workerLookup(ci,vi,ji,ai,cs,cb) {
+  const id = ++pendingReqId;
+  reqCallbacks.set(id, cb);
+  worker.postMessage({type:'lookup', reqId:id, ci,vi,ji,ai,cs});
+}
+
+worker.postMessage({type:'solve'});
+
+// ═══════════════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='screen' && !tesseractLoaded) loadTesseract();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// MANUAL TAB — BUILD UI
+// ═══════════════════════════════════════════════════════════════════════
+const statState = [
+  {att:0,suc:0,history:[]},
+  {att:0,suc:0,history:[]},
+  {att:0,suc:0,history:[]},
+  {att:0,suc:0,history:[]},
+];
+
+function buildDiamonds(container, isCurse, att, suc, history) {
+  container.innerHTML='';
+  for(let i=0;i<MAX_ATT;i++) {
+    const d=document.createElement('div');
+    if(history && i<history.length) {
+      const won=history[i];
+      d.className='dia '+(won ? (isCurse?'dia-curse-on':'dia-affix-on') : (isCurse?'dia-curse-off dia-used':'dia-affix-off dia-used'));
+      d.title=won?'Success':'Fail';
+    } else {
+      d.className='dia '+(isCurse?'dia-curse-off':'dia-affix-off');
+      d.title='Unused';
+      d.style.opacity='0.35';
+    }
+    container.appendChild(d);
+  }
+}
+
+const statRowsEl = document.getElementById('stat-rows');
+STAT_NAMES.forEach((name, si) => {
+  const card = document.createElement('div');
+  card.className='stat-card';
+  card.innerHTML=`
+    <div class="stat-head">
+      <span class="stat-name-label ${STAT_CURSE[si]?'curse-color':'affix-color'}">${name}</span>
+      <span class="stat-goal-label">${STAT_GOALS[si]}</span>
+    </div>
+    <div class="stat-inputs">
+      <div class="stat-counters">
+        <div class="counter-group">
+          <span class="counter-label">Successes</span>
+          <span class="counter-val" id="suc-val-${si}">0</span>
+        </div>
+        <div class="counter-group">
+          <span class="counter-label">Attempts</span>
+          <span class="counter-val" id="att-val-${si}">0</span>
+        </div>
+      </div>
+      <div class="record-btns">
+        <button class="btn-success" id="btn-suc-${si}">Record Success</button>
+        <button class="btn-failure" id="btn-fail-${si}">Record Failure</button>
+      </div>
+    </div>
+    <div class="diamonds" id="dia-${si}"></div>
+  `;
+  statRowsEl.appendChild(card);
+
+  const attValEl = document.getElementById(`att-val-${si}`);
+  const sucValEl = document.getElementById(`suc-val-${si}`);
+  const diaEl = document.getElementById(`dia-${si}`);
+
+  function update() {
+    const {att, suc, history} = statState[si];
+    attValEl.textContent = att;
+    sucValEl.textContent = suc;
+    buildDiamonds(diaEl, STAT_CURSE[si], att, suc, history);
+    triggerManualLookup();
+  }
+
+  document.getElementById(`btn-suc-${si}`).addEventListener('click', () => {
+    if(statState[si].att >= 10) return;
+    statState[si].history.push(true);
+    statState[si].att++;
+    statState[si].suc++;
+    currentCI = CI_WIN[currentCI];
+    document.getElementById('ci-display').textContent = CHANCE_LIST[currentCI] + '%';
+    update();
+  });
+  document.getElementById(`btn-fail-${si}`).addEventListener('click', () => {
+    if(statState[si].att >= 10) return;
+    statState[si].history.push(false);
+    statState[si].att++;
+    currentCI = CI_LOSE[currentCI];
+    document.getElementById('ci-display').textContent = CHANCE_LIST[currentCI] + '%';
+    update();
+  });
+  buildDiamonds(diaEl, STAT_CURSE[si], 0, 0, []);
+});
+
+let currentCI = 5;
+
+document.getElementById('global-reset-btn').addEventListener('click', () => {
+  statState.forEach((s, si) => {
+    s.att = 0; s.suc = 0; s.history = [];
+    const diaEl = document.getElementById(`dia-${si}`);
+    const attValEl = document.getElementById(`att-val-${si}`);
+    const sucValEl = document.getElementById(`suc-val-${si}`);
+    attValEl.textContent = 0;
+    sucValEl.textContent = 0;
+    buildDiamonds(diaEl, STAT_CURSE[si], 0, 0, []);
+  });
+  currentCI = 5;
+  document.getElementById('ci-display').textContent = '75%';
+  document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('highlighted'));
+  triggerManualLookup();
+});
+
+let manualLookupTimeout = null;
+function triggerManualLookup() {
+  if(!solverReady) return;
+  clearTimeout(manualLookupTimeout);
+  manualLookupTimeout = setTimeout(doManualLookup, 50);
+}
+
+function getStateIndices() {
+  const results = [];
+  for(let si=0; si<4; si++) {
+    const {att,suc} = statState[si];
+    const map = [vIdxMap,jIdxMap,aIdxMap,cIdxMap][si];
+    const idx = map[att*100+suc];
+    results.push(idx);
+  }
+  return results;
+}
+
+function doManualLookup() {
+  const ci = currentCI;
+  const [vi,ji,ai,cs] = getStateIndices();
+  if(vi===-1||vi===undefined||ji===-1||ai===-1||cs===-1) {
+    setManualResult(null,-1,0);
+    return;
+  }
+  const myId = ++activeReqId;
+  workerLookup(ci,vi,ji,ai,cs, (action,winProb) => {
+    if(myId !== activeReqId) return; // stale
+    setManualResult(null, action, winProb);
+  });
+}
+
+function isAlreadyWon() {
+  const affix = [statState[0].suc, statState[1].suc, statState[2].suc].sort((a,b)=>b-a);
+  return affix[0]>=9 && affix[1]>=6 && affix[2]>=3 && statState[3].suc<=4;
+}
+
+function setManualResult(hint, action, winProb) {
+  const box    = document.getElementById('m-result');
+  const actEl  = document.getElementById('m-action');
+  const probEl = document.getElementById('m-prob');
+  const wrap   = document.getElementById('m-wbar-wrap');
+  const bar    = document.getElementById('m-wbar');
+
+  if(isAlreadyWon()) {
+    box.className='result-box won';
+    actEl.textContent='9/6/3 Achieved';
+    probEl.textContent='All goals met. Enchanting successful.';
+    wrap.style.display='none';
+    document.querySelectorAll('.stat-card').forEach(c=>c.classList.remove('highlighted'));
+    return;
+  }
+
+  if(action===-1) {
+    box.className='result-box dead';
+    actEl.textContent='9/6/3 Unachievable';
+    probEl.textContent='9/6/3 + curse ≤4 is no longer achievable from this position.';
+    wrap.style.display='none';
+    return;
+  }
+  if(winProb===0) {
+    box.className='result-box dead';
+    actEl.textContent='Cannot win from here';
+    probEl.textContent='9/6/3 + curse ≤4 is no longer achievable from this position.';
+    wrap.style.display='none';
+    return;
+  }
+  const pct = (winProb*100).toFixed(2);
+  box.className = winProb > 0.3 ? 'result-box' : 'result-box warn';
+  actEl.textContent = `→ Enchant ${STAT_NAMES[action]}`;
+  probEl.textContent = `Win probability: ${pct}%`;
+  wrap.style.display='block';
+  bar.style.width = Math.min(winProb*100,100)+'%';
+
+  // Highlight the recommended stat card
+  document.querySelectorAll('.stat-card').forEach((c,i) => {
+    c.classList.toggle('highlighted', i===action);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SCREEN CAPTURE TAB
+// ═══════════════════════════════════════════════════════════════════════
+let videoStream    = null;
+let videoEl        = null;
+let calibRegion    = null;   // {x,y,w,h} in canvas coords
+let calibrating    = false;
+let calibCorner1   = null;
+let autoInterval   = null;
+let tesseractLoaded= false;
+let tesseractReady = false;
+
+const capCanvas = document.getElementById('cap-canvas');
+const capCtx    = capCanvas.getContext('2d');
+
+// Load Tesseract.js lazily
+function loadTesseract() {
+  if(tesseractLoaded) return;
+  tesseractLoaded = true;
+  const s = document.createElement('script');
+  s.src = 'https://unpkg.com/tesseract.js@4/dist/tesseract.min.js';
+  s.onload = () => { tesseractReady = true; };
+  document.head.appendChild(s);
+}
+
+document.getElementById('btn-cap').addEventListener('click', async () => {
+  try {
+    videoStream = await navigator.mediaDevices.getDisplayMedia({video:true, audio:false});
+    videoEl = document.createElement('video');
+    videoEl.srcObject = videoStream;
+    await videoEl.play();
+    document.getElementById('canvas-wrap').style.display='inline-block';
+    document.getElementById('s-result').style.display='flex';
+    document.getElementById('btn-cal').disabled = false;
+    if(solverReady) {
+      document.getElementById('btn-snap').disabled = false;
+      document.getElementById('btn-auto').disabled = false;
+    }
+    document.getElementById('cap-hint').textContent='Stream active. Calibrate the enchanting panel region, then Analyze Frame.';
+    capCanvas.width  = videoEl.videoWidth  || 800;
+    capCanvas.height = videoEl.videoHeight || 600;
+    drawFrame();
+  } catch(err) {
+    document.getElementById('cap-hint').textContent = 'Screen capture cancelled or not supported: '+err.message;
+  }
+});
+
+function drawFrame() {
+  if(!videoEl||!videoStream.active) return;
+  capCanvas.width  = videoEl.videoWidth;
+  capCanvas.height = videoEl.videoHeight;
+  capCtx.drawImage(videoEl, 0, 0);
+  drawRegionOverlay();
+}
+
+function drawRegionOverlay() {
+  if(!calibRegion) return;
+  const r = calibRegion;
+  const rect = document.getElementById('reg-rect');
+  rect.style.display='block';
+  rect.style.left   = r.x+'px';
+  rect.style.top    = r.y+'px';
+  rect.style.width  = r.w+'px';
+  rect.style.height = r.h+'px';
+}
+
+// Calibration
+document.getElementById('btn-cal').addEventListener('click', () => {
+  calibrating   = true;
+  calibCorner1  = null;
+  document.getElementById('cap-hint').textContent = 'Click the TOP-LEFT corner of the enchanting panel.';
+  drawFrame();
+});
+
+capCanvas.addEventListener('click', (e) => {
+  if(!calibrating) return;
+  const rect = capCanvas.getBoundingClientRect();
+  const scaleX = capCanvas.width  / rect.width;
+  const scaleY = capCanvas.height / rect.height;
+  const x = Math.round((e.clientX - rect.left) * scaleX);
+  const y = Math.round((e.clientY - rect.top)  * scaleY);
+  if(!calibCorner1) {
+    calibCorner1 = {x,y};
+    document.getElementById('cap-hint').textContent = 'Now click the BOTTOM-RIGHT corner.';
+  } else {
+    calibRegion = {
+      x: Math.min(calibCorner1.x, x),
+      y: Math.min(calibCorner1.y, y),
+      w: Math.abs(x - calibCorner1.x),
+      h: Math.abs(y - calibCorner1.y)
+    };
+    calibrating = false;
+    drawFrame();
+    document.getElementById('cap-hint').textContent =
+      `Region set: ${calibRegion.w}×${calibRegion.h} at (${calibRegion.x},${calibRegion.y}). Ready to analyze.`;
+  }
+});
+
+document.getElementById('btn-auto').addEventListener('click', function() {
+  if(autoInterval) {
+    clearInterval(autoInterval);
+    autoInterval = null;
+    this.textContent = 'Auto (1 s)';
+    document.getElementById('live-badge').style.display='none';
+  } else {
+    autoInterval = setInterval(() => { drawFrame(); analyzeFrame(); }, 1200);
+    this.textContent = '■ Stop Auto';
+    document.getElementById('live-badge').style.display='inline-block';
+  }
+});
+
+function updateOcrDisplay(state) {
+  document.getElementById('ocr-chance').textContent = state.ci!=null ? CHANCE_LIST[state.ci]+'%' : '?';
+  const labels=['ocr-v','ocr-j','ocr-a','ocr-c'];
+  state.stats.forEach((s,i) => {
+    document.getElementById(labels[i]).textContent = s ? `${s[1]}/${s[0]}` : '?';
+  });
+}
+
+function setScreenResult(action, winProb) {
+  const box   = document.getElementById('s-result');
+  const actEl = document.getElementById('s-action');
+  const prob  = document.getElementById('s-prob');
+  const wrap  = document.getElementById('s-wbar-wrap');
+  const bar   = document.getElementById('s-wbar');
+  box.style.display='flex';
+  if(action===-1||winProb===0) {
+    box.className='result-box dead';
+    actEl.textContent='Cannot win from here';
+    prob.textContent='9/6/3 + curse ≤4 is no longer achievable from this position.';
+    wrap.style.display='none';
+    return;
+  }
+  box.className = winProb>0.3 ? 'result-box' : 'result-box warn';
+  actEl.textContent = `→ Enchant ${STAT_NAMES[action]}`;
+  prob.textContent  = `Win probability: ${(winProb*100).toFixed(2)}%`;
+  wrap.style.display='block';
+  bar.style.width=Math.min(winProb*100,100)+'%';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PANEL PARSING (pixel analysis + OCR)
+// ═══════════════════════════════════════════════════════════════════════
+function rgbToHsv(r,g,b) {
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+  let h=0, s=max===0?0:d/max, v=max;
+  if(d>0) {
+    if(max===r) h=((g-b)/d+(g<b?6:0))/6;
+    else if(max===g) h=((b-r)/d+2)/6;
+    else h=((r-g)/d+4)/6;
+  }
+  return [h*360, s, v];
+}
+
+function countDiamonds(data, width, height, isCurse) {
+  const mask = new Uint8Array(width*height);
+  for(let i=0;i<data.length;i+=4) {
+    const [h,s,v] = rgbToHsv(data[i],data[i+1],data[i+2]);
+    mask[i/4] = isCurse
+      ? (h>=250&&h<=345&&s>=0.07&&v>=0.25?1:0)
+      : (h>=185&&h<=245&&s>=0.18&&v>=0.40?1:0);
+  }
+  // Small dilation (radius 2)
+  const dil = new Uint8Array(width*height);
+  const dk=2;
+  for(let y=0;y<height;y++) {
+    for(let x=0;x<width;x++) {
+      let found=false;
+      outer:for(let dy=-dk;dy<=dk;dy++) {
+        for(let dx=-dk;dx<=dk;dx++) {
+          const ny=y+dy,nx=x+dx;
+          if(ny>=0&&ny<height&&nx>=0&&nx<width&&mask[ny*width+nx]) {found=true;break outer}
+        }
+      }
+      dil[y*width+x]=found?1:0;
+    }
+  }
+  // BFS connected components
+  const vis = new Uint8Array(width*height);
+  const blobs=[];
+  for(let y=0;y<height;y++) {
+    for(let x=0;x<width;x++) {
+      const idx=y*width+x;
+      if(!dil[idx]||vis[idx]) continue;
+      const q=[idx]; vis[idx]=1;
+      let area=0,xMin=x,xMax=x,qi=0;
+      while(qi<q.length) {
+        const cur=q[qi++];
+        const cy=Math.floor(cur/width),cx=cur%width;
+        area++;
+        if(cx<xMin) xMin=cx;
+        if(cx>xMax) xMax=cx;
+        const neighbors=[cur-width,cur+width,cur-1,cur+1];
+        for(const ni of neighbors) {
+          if(ni<0||ni>=width*height) continue;
+          const ny=Math.floor(ni/width),nx=ni%width;
+          if(Math.floor(cur/width)!==ny && cx!==nx) continue; // 4-connectivity check
+          if(!dil[ni]||vis[ni]) continue;
+          vis[ni]=1; q.push(ni);
+        }
+      }
+      const bw=xMax-xMin;
+      if(area>=(isCurse?8:20)&&area<5000&&bw>4&&bw<130) blobs.push({x:xMin,area});
+    }
+  }
+  blobs.sort((a,b)=>a.x-b.x);
+  const merged=[];
+  for(const {x,area} of blobs) {
+    if(merged.length&&x-merged[merged.length-1].x<18) {
+      if(area>merged[merged.length-1].area) merged[merged.length-1]={x,area};
+    } else merged.push({x,area});
+  }
+  return Math.min(merged.length, MAX_ATT);
+}
+
+// Extract sub-region imageData from a full panel imageData
+function subRegion(data, fullW, x, y, w, h) {
+  const out = new Uint8ClampedArray(w*h*4);
+  for(let row=0;row<h;row++) {
+    const srcOff=((y+row)*fullW+x)*4;
+    const dstOff=row*w*4;
+    out.set(data.slice(srcOff, srcOff+w*4), dstOff);
+  }
+  return out;
+}
+
+// OCR one sub-region, return text
+async function ocrRegion(data, w, h) {
+  if(!tesseractReady) return '';
+  const oc = document.createElement('canvas');
+  oc.width=w*2; oc.height=h*2;
+  const octx = oc.getContext('2d');
+  const id2 = new ImageData(data, w, h);
+  const tmp = document.createElement('canvas');
+  tmp.width=w; tmp.height=h;
+  tmp.getContext('2d').putImageData(id2,0,0);
+  octx.imageSmoothingEnabled=false;
+  octx.drawImage(tmp,0,0,w*2,h*2);
+  // Grayscale + invert for OCR
+  const octxId = octx.getImageData(0,0,w*2,h*2);
+  const d=octxId.data;
+  for(let i=0;i<d.length;i+=4) {
+    const g=Math.round(.299*d[i]+.587*d[i+1]+.114*d[i+2]);
+    d[i]=d[i+1]=d[i+2]=255-g; // invert for dark-on-bright text
+    d[i+3]=255;
+  }
+  octx.putImageData(octxId,0,0);
+  try {
+    const {data:{text}} = await Tesseract.recognize(oc,'eng',{logger:()=>{}});
+    return text;
+  } catch(e) { return ''; }
+}
+
+function parseChanceFromText(text) {
+  const m = text.match(/(\d+)\s*%/);
+  if(!m) return null;
+  const val=parseInt(m[1]);
+  let best=-1, bestDist=999;
+  CHANCE_LIST.forEach((c,i)=>{
+    const d=Math.abs(c-val);
+    if(d<bestDist){bestDist=d;best=i}
+  });
+  return bestDist<=7?best:null;
+}
+
+function parseSuccessFromText(text) {
+  const m=text.match(/\+\s*(\d+)(?!\s*%)/);
+  return m?parseInt(m[1]):null;
+}
+
+// Main panel parse
+async function parsePanel(imageData, w, h) {
+  const d=imageData.data;
+  // Chance: top 20%
+  const hdrH=Math.max(1,Math.round(h*0.20));
+  const hdrData=subRegion(d, w, 0,0,w,hdrH);
+  const chanceText=await ocrRegion(hdrData,w,hdrH);
+  const ci=parseChanceFromText(chanceText);
+
+  // 4 stat rows: equal quarters
+  const rowH=Math.floor(h/4);
+  const stats=[];
+  for(let si=0;si<4;si++) {
+    const y0=si*rowH, y1=si<3?y0+rowH:h;
+    const rh=y1-y0;
+    const rowData=subRegion(d, w, 0,y0,w,rh);
+    const isCurse=si===3;
+
+    // Diamond region: bottom 45%, left 72%
+    const diaTop=Math.round(rh*0.55), diaW=Math.round(w*0.72);
+    const diaData=subRegion(rowData, w, 0,diaTop,diaW,rh-diaTop);
+    const att=countDiamonds(diaData,diaW,rh-diaTop,isCurse);
+
+    // Text region: top 55%, skip left icon (8%)
+    const txtTop=0, txtLeft=Math.round(w*0.08), txtW=Math.round(w*0.5);
+    const txtData=subRegion(rowData, w, txtLeft,txtTop,txtW,Math.round(rh*0.55));
+    const txt=await ocrRegion(txtData,txtW,Math.round(rh*0.55));
+    let suc=parseSuccessFromText(txt);
+    if(suc==null){stats.push(null);continue}
+    suc=Math.max(0,Math.min(suc,att));
+    stats.push([att,suc]);
+  }
+  return {ci, stats};
+}
+
+async function analyzeFrame() {
+  if(!calibRegion){document.getElementById('cap-hint').textContent='Please calibrate the region first.';return}
+  const r=calibRegion;
+  const imageData=capCtx.getImageData(r.x,r.y,r.w,r.h);
+  document.getElementById('ocr-state').style.display='grid';
+  document.getElementById('ocr-status').textContent='Analyzing…';
+
+  const state=await parsePanel(imageData,r.w,r.h);
+  updateOcrDisplay(state);
+
+  if(!solverReady||state.ci==null||state.stats.some(s=>s==null)){
+    document.getElementById('ocr-status').textContent='Incomplete state — check region or calibration';
+    return;
+  }
+
+  const maps=[vIdxMap,jIdxMap,aIdxMap,cIdxMap];
+  const idxs=state.stats.map((s,i)=>maps[i][s[0]*100+s[1]]);
+  if(idxs.some(v=>v==null||v===-1)){
+    document.getElementById('ocr-status').textContent='State out of valid range';
+    return;
+  }
+  document.getElementById('ocr-status').textContent='OK';
+  const myId=++activeReqId;
+  workerLookup(state.ci,idxs[0],idxs[1],idxs[2],idxs[3],(action,winProb)=>{
+    if(myId!==activeReqId)return;
+    setScreenResult(action,winProb);
+  });
+}
+
+document.getElementById('btn-snap').addEventListener('click',()=>{drawFrame();analyzeFrame()});
+</script>
+</body>
+</html>
